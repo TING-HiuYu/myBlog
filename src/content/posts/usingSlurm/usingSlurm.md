@@ -15,7 +15,7 @@ draft: false
 
 ## 0. 系统架构
 
-集群由五台服务器组成，通过一台 **40G 以太网交换机**互连，构建高速计算网络。
+集群由六台服务器组成，通过一台 **40G 以太网交换机**互连，构建高速计算网络。
 
 <!-- ```mermaid
 graph TD
@@ -38,6 +38,7 @@ graph TD
 
 **硬件配置明细**：
 
+- **控制服务器**：控制节点，用于作业调度、提供REST API。
 - **登录服务器**：用户接入节点，用于作业提交和管理。
 - **GPU服务器**：64核心128线程，120GB内存，8张NVIDIA 4090 48GB显卡。
 - **CPU服务器1**：48核心96线程，128GB内存。
@@ -46,9 +47,13 @@ graph TD
 
 <img width="1512" height="867" alt="零信任平台入口" src="/posts/usingSlurm/topology.png" />
 
+注意：控制节点和登陆节点是一台mac mini上跑的虚拟机。因此，对于登陆节点，请不要再上面编译程序或者运行代码，基本上编不出来，编出来了你在计算节点上也跑不了~~你要交叉编译那我也没啥好说的~~。
+
 ---
 
 ## 1. 环境与基本配置
+
+出于安全因素，除SSH，所有的敏感业务访问都必须通过 `Cloudflare 零信任平台` 进行登录，Cloudflare会记录你的用户态，单次有效期最长为24小时。你的密码修改，证书获取，以及查看我们的web面板，都属于敏感业务。
 
 ### 1.1 登录零信任平台
 访问 [https://ai4qc-hkust.cloudflareaccess.com/](https://ai4qc-hkust.cloudflareaccess.com/)。  
@@ -77,7 +82,7 @@ graph TD
 解压后，您可以选择以下任一方式使用证书连接集群：
 
 #### 1.4.0 注意事项
-```
+```bash
 以防有人不仔细看，SSH 记得加端口9922
 ```
 
@@ -90,7 +95,7 @@ ssh -i /path/to/private_key_file <username>@login.ai4qc.icu -p 9922
 
 #### 1.4.2 配置 SSH config
 在 `~/.ssh/config` 中添加如下配置：
-```
+```bash
 Host ai4qc
     HostName login.ai4qc.icu
     User <your-username>
@@ -119,6 +124,8 @@ ssh <username>@login.ai4qc.icu -p 9922
 
 ## 2. Slurm 作业调度系统使用
 
+一些基本说明
+
 ### 2.1 分区说明
 集群包含两个分区（Partition）：
 - **cpu**：用于纯 CPU 计算任务（默认分区）。
@@ -126,7 +133,31 @@ ssh <username>@login.ai4qc.icu -p 9922
 
 提交作业时若未指定分区，默认使用 `cpu`。
 
-### 2.2 提交作业示例
+### 2.2 登入登陆节点
+- 进入登陆节点后，会有一些基本的信息提示
+<img width="1512" height="867" alt="image" src="/posts/usingSlurm/login-default.png" />
+
+- 在个人目录下，有个共享文件夹，你可以在这放置共享文件，如协作目录等
+<img width="1512" height="867" alt="image" src="/posts/usingSlurm/shared.png" />
+
+  共享目录默认的文件权限为 `所有人可创建; 文件只有创建者可读写; 他人只读` ，如果需要创建协作目录，建议参考以下命令
+  ```bash
+  # 如果协作目录是 你可读写，他人只读
+  chmod 777 <你的协作目录>
+  # 如果协作目录下是 所有人可创建; 文件只有创建者可读写，他人只读
+  chmod 1777 <你的协作目录>
+  ```
+
+
+### 2.3 查看集群信息
+- 你可以使用 `sinfo` 查看节点和分区信息
+<img width="1512" height="867" alt="image" src="/posts/usingSlurm/sinfo.png" />
+
+- 你可以使用 `module ava` 支持的查看软件包模块
+<img width="1512" height="867" alt="image" src="/posts/usingSlurm/module-ava.png" />
+  之后，你可以使用module load加载你想要的软件包
+
+### 2.4 提交作业示例
 - **GPU 作业**：**系统会自动分配一张显卡**。如需多卡，请使用 `-G` 或 `--gres` 参数显式指定。
   ```bash
   # 自动分配一张显卡（默认）
@@ -140,7 +171,7 @@ ssh <username>@login.ai4qc.icu -p 9922
   sbatch -p cpu -c 8 your_program
   ```
 
-### 2.3 注意事项
+### 2.5 注意事项
   因为登陆服务器是挂载在MacOS上的虚拟机，强烈不推荐在登陆服务器上进行如下任务：
 - 编译可执行程序
 - 运行计算任务
@@ -152,13 +183,23 @@ ssh <username>@login.ai4qc.icu -p 9922
   srun -p cpu -c 8 your_program
   ```
 
-### 2.4 更多参考
-上海交通大学超算平台提供了详尽的 Slurm 使用指南，强烈建议阅读：
-[https://docs.hpc.sjtu.edu.cn/job/slurm.html](https://docs.hpc.sjtu.edu.cn/job/slurm.html)
+### 2.6 更多参考
+以下页面提供了详尽的 Slurm 使用指南，如有需要强烈建议阅读：
+
+- 上海交通大学超算平台: [Slurm 作业调度系统¶](https://docs.hpc.sjtu.edu.cn/job/slurm.html)
+
+- Slurm Worker Manager: [Slurm Documentation](https://slurm.schedmd.com/documentation.html)
+
+- CLab Server Docs: [LMod 使用指南](https://clab-hkust-gz.github.io/server-docs/userguide/lmod.html)
+
+- LMod: [User Guide for Lmod](https://lmod.readthedocs.io/en/latest/010_user.html)
+
 
 ---
 
 ## 3. 任务后台查看
+
+我们有个非常漂亮的后台，以下是它的使用教程
 
 ### 3.1 访问 Dashboard
 打开浏览器访问 [https://slurm-dashboard.ai4qc.icu/](https://slurm-dashboard.ai4qc.icu/)。  
@@ -172,6 +213,8 @@ ssh <username>@login.ai4qc.icu -p 9922
 ---
 
 ## 4. 密码管理
+
+~~以防你忘记密码了，虽然说这东西没啥用~~
 
 ### 4.1 登录 profile 页面
 访问 [https://profile.ai4qc.icu/](https://profile.ai4qc.icu/) 并使用 GitHub OAuth 登录。
