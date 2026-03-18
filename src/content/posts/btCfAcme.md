@@ -7,8 +7,6 @@ category: Guides
 draft: false
 ---
 
-# 宝塔面板部署 `update_ssl.py` 使用指南
-
 ## 目录
 - [1. 项目简介](#1-项目简介)
 - [2. 实现原理](#2-实现原理)
