@@ -207,21 +207,31 @@ Termius 支持直接导入 SSH 证书，请参阅 [Import SSH Certificate](https
 
 ---
 
-## 4. 密码管理
+## 4. 传输文件
+
+传输文件支持以下几种方式(可点击超链接跳转教程)：
+
+  - [rsync](https://blog.axiaoxin.com/post/rsync-guide/)
+  - [SFTP](https://zhuanlan.zhihu.com/p/697476464)
+  - [百度网盘](https://zhuanlan.zhihu.com/p/1960328529683132667)，教程可以忽略前面的"下载"部分，我已经部署好了，直接从 “登录” 开始看即可
+  
+---
+
+## 5. 密码管理
 
 ~~以防你忘记密码了，虽然说这东西没啥用~~
 
-### 4.1 登录 profile 页面
+### 5.1 登录 profile 页面
 访问 [https://slurm-profile.thy.icu/](https://slurm-profile.thy.icu/) 并使用 GitHub OAuth 登录。
 
-### 4.2 修改密码
+### 5.2 修改密码
 在 **“修改帐户密码”** 区域，您可以通过以下两种方式验证身份：
 - **原密码**：输入当前密码。
 - **OAuth**：使用 GitHub 快速验证（推荐，邮箱验证暂不可用）。
 
 验证通过后，在右侧输入新密码两次，确保一致，点击 **提交** 即可。
 
-### 4.3 注意事项
+### 5.3 注意事项
 - 密码修改成功后，您会被强制登出，后续访问需使用新密码重新登录。
 - 请妥善保管密码，避免泄露。
 
