@@ -22,9 +22,9 @@ graph TD
     Switch[Mellanox SX6012 40G 交换机]
 
     Login[登录服务器]
-    GPU["GPU服务器<br/>64c128t | 120GB RAM<br/>8×NVIDIA 4090 48GB"]
+    GPU["GPU服务器<br/>64c128t | 384GB RAM<br/>8×NVIDIA 4090 48GB"]
     CPU1["CPU服务器1<br/>48c96t | 128GB RAM"]
-    CPU2["CPU服务器2<br/>48c96t | 256GB RAM"]
+    CPU2["CPU服务器2<br/>48c96t | 128GB RAM"]
     Storage["存储服务器<br/>48TB 阵列<br/>1TB NVMe SSD 缓存<br/>256GB Optane PMEM"]
 
     Login --- Switch
@@ -105,6 +105,7 @@ Host slurm-login
     Port 9922
     IdentityFile /path/to/private_key_file
     CertificateFile /path/to/cert_file
+    AddKeysToAgent yes
 ```
 之后可直接使用 `ssh slurm-login` 登录。
 
