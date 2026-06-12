@@ -86,13 +86,13 @@ graph TD
 
 #### 注意事项
 ```bash
-以防有人不仔细看，SSH 记得加端口9922
+以防有人不仔细看，SSH 记得加端口9933
 ```
 
 
 #### 1.5.1 使用命令行直接登录
 ```bash
-ssh -i /path/to/private_key_file <username>@login.thy.icu -p 9922
+ssh -i /path/to/private_key_file <username>@login.thy.icu -p 9933
 ```
 （SSH 客户端会自动寻找同名的证书文件，无需额外指定。）
 
@@ -102,7 +102,7 @@ ssh -i /path/to/private_key_file <username>@login.thy.icu -p 9922
 Host slurm-login
     HostName login.thy.icu
     User <your-username>
-    Port 9922
+    Port 9933
     IdentityFile /path/to/private_key_file
     CertificateFile /path/to/cert_file
     AddKeysToAgent yes
@@ -167,16 +167,7 @@ Termius 支持直接导入 SSH 证书，请参阅 [Import SSH Certificate](https
   ```
 
 ### 2.5 注意事项
-  因为登陆服务器是挂载在MacOS上的虚拟机，强烈不推荐在登陆服务器上进行如下任务：
-- 编译可执行程序
-- 运行计算任务
-
-如果需要编译可执行程序，请先编译好再上传到slurm上。
-
-如果需要测试程序，请直接使用`srun`进入交互式命令行执行。
-  ```bash
-  srun -p cpu -c 8 your_program
-  ```
+暂无，不要在登陆节点跑重型负载即可
 
 ### 2.6 更多参考
 以下页面提供了详尽的 Slurm 使用指南，如有需要强烈建议阅读：
