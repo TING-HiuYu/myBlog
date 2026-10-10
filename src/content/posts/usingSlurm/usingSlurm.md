@@ -37,17 +37,21 @@ graph TD
 
 
 **硬件配置明细**：
+**广州节点**
 
-- **控制服务器**：控制节点，用于作业调度、提供REST API。
-- **登录服务器**：用户接入节点，用于作业提交和管理。
-- **GPU服务器**：64核心128线程，120GB内存，8张NVIDIA 4090 48GB显卡。
-- **CPU服务器1**：48核心96线程，128GB内存。
-- **CPU服务器2**：48核心96线程，256GB内存。
-- **存储服务器**：48TB硬盘阵列，配备1TB NVMe SSD高速缓存和256GB Intel Optane PMEM超高速缓存。
+| 设备类型 | 硬件配置 |
+|---|---|
+| GPU服务器 | 128 核心 256 线程；376GB 内存；8张 NVIDIA 4090 48GB 显卡 |
+| CPU服务器 | 48 核心 96 线程；256GB 内存 |
+| 存储服务器 | 48TB 混合存储阵列 |
 
-<img width="1512" height="867" alt="零信任平台入口" src="/posts/usingSlurm/topology.png" />
+**香港节点**
 
-注意：控制节点和登陆节点是一台mac mini上跑的虚拟机。因此，对于登陆节点，请不要再上面编译程序或者运行代码，基本上编不出来，编出来了你在计算节点上也跑不了~~你要交叉编译那我也没啥好说的~~。
+| 设备类型 | 硬件配置 |
+|---|---|
+| GPU服务器 | 512 核心 1024 线程；2048GB 内存；32张 NVIDIA 4090D 24GB 显卡 |
+| 存储服务器 | 16TB HDD 硬盘阵列；6T 分布式 NVME SSD 存储系统 |
+
 
 ---
 
@@ -55,7 +59,7 @@ graph TD
 
 出于安全因素，除SSH，所有的敏感业务访问都必须通过 `Cloudflare 零信任平台` 进行登录，Cloudflare会记录你的用户态，单次有效期最长为24小时。你的密码修改，证书获取，以及查看我们的web面板，都属于敏感业务。
 
-### 1.1 登录零信任平台
+### 1.1 访问用户管理界面
 访问 [https://ai4qc-hkust.cloudflareaccess.com/](https://ai4qc-hkust.cloudflareaccess.com/)。  
 **注意**：必须使用已在 `ai4qc` 组织内的 GitHub 帐户登录，否则无法获得授权。  
 成功登录后，您将看到如下界面：  
@@ -64,7 +68,7 @@ graph TD
 
 
 ### 1.2 访问用户管理界面
-点击零信任平台中的 **profile** 或直接访问 [https://slurm-profile.thy.icu/](https://slurm-profile.thy.icu/) 进入用户管理界面。  
+点击零信任平台中的 **account** 或直接访问 [https://slurm-account.thy.icu/](https://slurm-account.thy.icu/) 进入用户管理界面。  
 <img width="1512" height="867" alt="image" src="/posts/usingSlurm/go-ldap-login.png" />
 
 
@@ -82,6 +86,8 @@ graph TD
 - **私钥文件**：文件名格式为 `[用户名]-[日期]`（例如 `zhangsan-20250302`）
 - **签名证书**：文件名格式为 `[用户名]-[日期]-cert.crt`（例如 `zhangsan-20250302-cert.crt`）
 
+**！！注意，如果你之前申请过证书，重新申请会吊销之前的！！**
+
 解压后，您可以选择以下任一方式使用证书连接集群：
 
 #### 注意事项
@@ -92,7 +98,7 @@ graph TD
 
 #### 1.5.1 使用命令行直接登录
 ```bash
-ssh -i /path/to/private_key_file <username>@login.thy.icu -p 9933
+ssh -i /path/to/private_key_file <username>@<cluster>.login.thy.icu -p 9933
 ```
 （SSH 客户端会自动寻找同名的证书文件，无需额外指定。）
 
@@ -100,7 +106,7 @@ ssh -i /path/to/private_key_file <username>@login.thy.icu -p 9933
 在 `~/.ssh/config` 中添加如下配置：
 ```bash
 Host slurm-login
-    HostName login.thy.icu
+    HostName <cluster>.login.thy.icu
     User <your-username>
     Port 9933
     IdentityFile /path/to/private_key_file
@@ -115,6 +121,12 @@ Host slurm-login
 #### 1.5.4 在 Termius 中使用
 Termius 支持直接导入 SSH 证书，请参阅 [Import SSH Certificate](https://termius.com/documentation/ssh-certificates) 完成设置。
 
+#### 1.5.5 集群信息
+
+| 节点 | 集群位置 | cluster | 完整域名 |
+|---|---|---|---|
+| 广州节点 | 广州 | gz | gz.login.thy.icu |
+| 香港节点 | 香港 | hkust | hkust.login.thy.icu |
 ---
 
 ## 2. Slurm 作业调度系统使用
@@ -122,31 +134,42 @@ Termius 支持直接导入 SSH 证书，请参阅 [Import SSH Certificate](https
 一些基本说明
 
 ### 2.1 分区说明
-集群包含两个分区（Partition）：
-- **cpu**：用于纯 CPU 计算任务（默认分区）。
-- **gpu**：用于 GPU 加速任务。
+集群包含以下分区（Partition）：
+| 集群 | 分区 |
+|---|---|
+| 广州 | cpu（默认）、gpu |
+| 香港 | gpu（默认） |
 
-提交作业时若未指定分区，默认使用 `cpu`。
+提交作业时若未指定分区，默认使用 `默认` 分区。
 
 ### 2.2 登入登陆节点
 - 进入登陆节点后，会有一些基本的信息提示
 <img width="1512" height="867" alt="image" src="/posts/usingSlurm/login-default.png" />
 
-- 在个人目录下，有个共享文件夹，你可以在这放置共享文件，如协作目录等
-<img width="1512" height="867" alt="image" src="/posts/usingSlurm/shared.png" />
+- 在个人目录下，以下 symlink 指向其他文件夹，可用于放置各类文件：
 
-  共享目录默认的文件权限为 `所有人可创建; 文件只有创建者可读写; 他人只读` ，如果需要创建协作目录，建议参考以下命令
+  | 存储空间 | 内容 | 说明 |
+  |---|---|---|
+  | HDD_POOL（如有） | 归档数据 | 若存在该 symlink，可用于存放归档数据 |
+  | SHARED | 共享数据 | 用于存放共享数据 |
+  | 家目录 | 常用数据、归档数据（如无 HDD_POOL） | 常用数据默认放这里；若没有 HDD_POOL，归档数据也放这里 |
+
+  <img width="1512" height="867" alt="image" src="/posts/usingSlurm/shared.png" />
+
+
+- 共享目录默认的文件权限为 `所有人可创建; 文件只有创建者可读写; 他人只读` ，如果需要创建协作目录，建议参考以下命令
   ```bash
   # 如果协作目录是 你可读写，他人只读
-  chmod 777 <你的协作目录>
+  chmod 755 <你的协作目录>
   # 如果协作目录下是 所有人可创建; 文件只有创建者可读写，他人只读
   chmod 1777 <你的协作目录>
   ```
 
 
 ### 2.3 查看集群信息
-- 你可以使用 `sinfo` 查看节点和分区信息
+- 你可以使用 `sinfo` 查看节点和分区信息；或更方便，用`sstatus`
 <img width="1512" height="867" alt="image" src="/posts/usingSlurm/sinfo.png" />
+
 
 - 你可以使用 `module ava` 支持的查看软件包模块
 <img width="1512" height="867" alt="image" src="/posts/usingSlurm/module-ava.png" />
@@ -188,13 +211,21 @@ Termius 支持直接导入 SSH 证书，请参阅 [Import SSH Certificate](https
 我们有个非常漂亮的后台，以下是它的使用教程
 
 ### 3.1 访问 Dashboard
-打开浏览器访问 [https://slurm-dashboard.thy.icu/](https://slurm-dashboard.thy.icu/)。  
-若浏览器会话中无有效的 Access Token，系统将自动重定向至 Cloudflare 零信任网关重新登录。认证成功后，将跳转至 Dashboard, 即可查看作业状态、资源使用情况等。  
+打开浏览器访问 [https://slurm-dashboard.thy.icu/](https://slurm-dashboard.thy.icu/)。若浏览器会话中无有效的 Access Token，系统将自动重定向至 Cloudflare 零信任网关重新登录。认证成功后，将跳转至 Dashboard, 即可查看作业状态、资源使用情况等。  
+
+<img width="1512" height="867" alt="image" src="/posts/usingSlurm/slurm-web1.png" />
+
+上图中，你可以选择想要浏览的集群一览
+
+<img width="1512" height="867" alt="image" src="/posts/usingSlurm/slurm-web2.png" />
+
+你也可以通过点击上图红色方框的位置重新选择集群
 
 
 
-更详细的使用说明，请阅读[Slurm-web/Overview](https://docs.rackslab.io/slurm-web/overview/overview.html)
-<img width="1512" height="867" alt="image" src="/posts/usingSlurm/slurm-web.png" />
+
+
+更详细的使用说明，请阅读[Slurm-web/Overview](https://docs.rackslab.io/slurm-web/overview/overview.html)，或者自己探索吧。
 
 ---
 
@@ -212,8 +243,8 @@ Termius 支持直接导入 SSH 证书，请参阅 [Import SSH Certificate](https
 
 ~~以防你忘记密码了，虽然说这东西没啥用~~
 
-### 5.1 登录 profile 页面
-访问 [https://slurm-profile.thy.icu/](https://slurm-profile.thy.icu/) 并使用 GitHub OAuth 登录。
+### 5.1 登录 account 页面
+访问 [https://slurm-account.thy.icu/](https://slurm-account.thy.icu/) 并使用 GitHub OAuth 登录。
 
 ### 5.2 修改密码
 在 **“修改帐户密码”** 区域，您可以通过以下两种方式验证身份：
