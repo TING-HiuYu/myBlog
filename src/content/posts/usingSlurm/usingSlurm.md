@@ -77,12 +77,12 @@ graph TD
 - 登录成功后进入个人主页。**新用户会弹出初始密码**，请妥善保存；您可以立即修改或暂时忽略。  
 <img width="1512" height="867" alt="image" src="/posts/usingSlurm/profile-page.png" />
 
-## 1.4 配置终端（可选）
+### 1.4 配置终端（可选）
 默认登录 Shell 为 **zsh**，其具备强大的自动补全和主题功能。如需切换为 bash，请在登录后进入 **“终端设置”** → **“Shell”** 进行修改。
 
 
 ### 1.5 获取 SSH 证书
-在个人主页中，找到 **“生成并下载 SSH 证书”** 区域，点击 **“生成”** 按钮。系统将生成一对证书并自动下载为一个压缩包：
+在个人主页中，找到 **“生成并下载 SSH 证书”** 区域，点击 **“生成”** 按钮。系统将生成一对证书并自动下载为一个压缩包。一对证书对所有集群都是通用的，如果你以前已经申请了可以直接跳转到`1.6`：
 - **私钥文件**：文件名格式为 `[用户名]-[日期]`（例如 `zhangsan-20250302`）
 - **签名证书**：文件名格式为 `[用户名]-[日期]-cert.crt`（例如 `zhangsan-20250302-cert.crt`）
 
@@ -95,14 +95,15 @@ graph TD
 以防有人不仔细看，SSH 记得加端口9933
 ```
 
+### 1.6 连接和登陆集群
 
-#### 1.5.1 使用命令行直接登录
+#### 1.6.1 使用命令行直接登录
 ```bash
 ssh -i /path/to/private_key_file <username>@<cluster>.login.thy.icu -p 9933
 ```
 （SSH 客户端会自动寻找同名的证书文件，无需额外指定。）
 
-#### 1.5.2 配置 SSH config
+#### 1.6.2 配置 SSH config
 在 `~/.ssh/config` 中添加如下配置：
 ```bash
 Host slurm-login
@@ -115,13 +116,13 @@ Host slurm-login
 ```
 之后可直接使用 `ssh slurm-login` 登录。
 
-#### 1.5.3 在 VS Code 中使用
+#### 1.6.3 在 VS Code 中使用
 参考官方文档 [Improving your security with a dedicated key](https://code.visualstudio.com/docs/remote/troubleshooting#_improving-your-security-with-a-dedicated-key)，配置 Remote-SSH 使用证书。
 
-#### 1.5.4 在 Termius 中使用
+#### 1.6.4 在 Termius 中使用
 Termius 支持直接导入 SSH 证书，请参阅 [Import SSH Certificate](https://termius.com/documentation/ssh-certificates) 完成设置。
 
-#### 1.5.5 集群信息
+#### 1.6.5 集群信息
 
 | 节点 | 集群位置 | cluster | 完整域名 |
 |---|---|---|---|
